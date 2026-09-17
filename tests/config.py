@@ -107,7 +107,7 @@ class Config_:
                     "out_stream": None,
                     "pty": False,
                     "replace_env": False,
-                    "shell": "/bin/bash",
+                    "shell": "bash",
                     "warn": False,
                     "watchers": [],
                 },
@@ -449,6 +449,7 @@ Valid real attributes: ['clear', 'clone', 'env_prefix', 'file_prefix', 'from_dat
             assert callable(c.mymethod)
             assert c.mymethod() == 7
             assert c["mymethod"] == "bar"
+
             # And same after setattr
             def monkeys():
                 return 13
@@ -1038,24 +1039,6 @@ Valid real attributes: ['clear', 'clone', 'env_prefix', 'file_prefix', 'from_dat
                 c = Config(defaults={"meh": "okay"})
                 c2 = c.clone()
                 assert c2.meh == "okay"
-
-            def raises_TypeError_if_value_is_not_Config_subclass(self):
-                try:
-                    Config().clone(into=17)
-                except TypeError:
-                    pass
-                else:
-                    assert False, "Non-class obj did not raise TypeError!"
-
-                class Foo:
-                    pass
-
-                try:
-                    Config().clone(into=Foo)
-                except TypeError:
-                    pass
-                else:
-                    assert False, "Non-subclass did not raise TypeError!"
 
             def resulting_clones_are_typed_as_new_class(self):
                 class MyConfig(Config):

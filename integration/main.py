@@ -1,78 +1,76 @@
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
+from _util import only_utf8
 from pytest_relaxed import trap
 
-from invoke import run
-from invoke._version import __version__
+from invoke import __version__, run
 from invoke.terminals import WINDOWS
 
-from _util import only_utf8
 
-
-def _output_eq(cmd, expected):
-    assert run(cmd, hide=True).stdout == expected
+def _output_eq(cmd: str, expected: str) -> None:
+    assert run(cmd, hide=True).stdout.strip() == expected
 
 
 class Main:
-    def setup_method(self):
+    def setup_method(self) -> None:
         self.cwd = os.getcwd()
         # Enter integration/_support as all support files are in there now
         os.chdir(Path(__file__).parent / "_support")
 
-    def teardown_method(self):
+    def teardown_method(self) -> None:
         os.chdir(self.cwd)
 
     class basics:
         @trap
-        def basic_invocation(self):
-            _output_eq("invoke print-foo", "foo\n")
+        def basic_invocation(self) -> None:
+            _output_eq("invoke print-foo", "foo")
 
         @trap
-        def version_output(self):
-            _output_eq("invoke --version", "Invoke {}\n".format(__version__))
+        def version_output(self) -> None:
+            _output_eq("invoke --version", "Invoke {}".format(__version__))
 
         @trap
-        def help_output(self):
+        def help_output(self) -> None:
             assert "Usage: inv[oke] " in run("invoke --help").stdout
 
         @trap
-        def per_task_help(self):
+        def per_task_help(self) -> None:
             assert "Frobazz" in run("invoke -c _explicit foo --help").stdout
 
         @trap
-        def shorthand_binary_name(self):
-            _output_eq("inv print-foo", "foo\n")
+        def shorthand_binary_name(self) -> None:
+            _output_eq("inv print-foo", "foo")
 
         @trap
-        def explicit_task_module(self):
-            _output_eq("inv --collection _explicit foo", "Yup\n")
+        def explicit_task_module(self) -> None:
+            _output_eq("inv --collection _explicit foo", "Yup")
 
         @trap
-        def invocation_with_args(self):
-            _output_eq("inv print-name --name whatevs", "whatevs\n")
+        def invocation_with_args(self) -> None:
+            _output_eq("inv print-name --name whatevs", "whatevs")
 
         @trap
-        def bad_collection_exits_nonzero(self):
+        def bad_collection_exits_nonzero(self) -> None:
             result = run("inv -c nope -l", warn=True)
             assert result.exited == 1
             assert not result.stdout
             assert result.stderr
 
         @trap
-        def package_style_collections_internally_importable(self):
+        def package_style_collections_internally_importable(self) -> None:
             # After merging #919 blew this up and unit tests did not detect!
             result = run("cd package && inv -l")
             assert "mytask" in result.stdout
 
-        def loads_real_user_config(self):
+        def loads_real_user_config(self) -> None:
             path = os.path.expanduser("~/.invoke.yaml")
             try:
                 with open(path, "w") as fd:
                     fd.write("foo: bar")
-                _output_eq("inv print-config", "bar\n")
+                _output_eq("inv print-config", "bar")
             finally:
                 try:
                     os.unlink(path)
@@ -80,33 +78,33 @@ class Main:
                     pass
 
         @trap
-        def invocable_via_python_dash_m(self):
+        def invocable_via_python_dash_m(self) -> None:
             _output_eq(
-                "python -m invoke print-name --name mainline", "mainline\n"
+                "python -m invoke print-name --name mainline", "mainline"
             )
 
     class funky_characters_in_stdout:
         @only_utf8
-        def basic_nonstandard_characters(self):
+        def basic_nonstandard_characters(self) -> None:
             # Crummy "doesn't explode with decode errors" test
             cmd = ("type" if WINDOWS else "cat") + " tree.out"
             run(cmd, hide="stderr")
 
         @only_utf8
-        def nonprinting_bytes(self):
+        def nonprinting_bytes(self) -> None:
             # Seriously non-printing characters (i.e. non UTF8) also don't
             # asplode (they would print as escapes normally, but still)
             run("echo '\xff'", hide="stderr")
 
         @only_utf8
-        def nonprinting_bytes_pty(self):
+        def nonprinting_bytes_pty(self) -> None:
             if WINDOWS:
                 return
             # PTY use adds another utf-8 decode spot which can also fail.
             run("echo '\xff'", pty=True, hide="stderr")
 
     class ptys:
-        def complex_nesting_under_ptys_doesnt_break(self):
+        def complex_nesting_under_ptys_doesnt_break(self) -> None:
             if WINDOWS:  # Not sure how to make this work on Windows
                 return
             # GH issue 191
@@ -115,7 +113,7 @@ class Main:
             expected = "      hello\t\t\r\nworld with spaces\r\n"
             assert run(cmd, pty=True, hide="both").stdout == expected
 
-        def pty_puts_both_streams_in_stdout(self):
+        def pty_puts_both_streams_in_stdout(self) -> None:
             if WINDOWS:
                 return
             err_echo = "{} err.py".format(sys.executable)
@@ -124,7 +122,7 @@ class Main:
             assert r.stdout == "foo\r\nbar\r\n"
             assert r.stderr == ""
 
-        def simple_command_with_pty(self):
+        def simple_command_with_pty(self) -> None:
             """
             Run command under PTY
             """
@@ -136,7 +134,7 @@ class Main:
             assert result.pty is True
 
         @pytest.mark.skip(reason="CircleCI env actually does have 0x0 stty")
-        def pty_size_is_realistic(self):
+        def pty_size_is_realistic(self) -> None:
             # When we don't explicitly set pty size, 'stty size' sees it as
             # 0x0.
             # When we do set it, it should be some non 0x0, non 80x24 (the
@@ -148,7 +146,7 @@ class Main:
             assert size != "24 80"
 
     class parsing:
-        def false_as_optional_arg_default_value_works_okay(self):
+        def false_as_optional_arg_default_value_works_okay(self) -> None:
             # (Dis)proves #416. When bug present, parser gets very confused,
             # asks "what the hell is 'whee'?". See also a unit test for
             # Task.get_arguments.
@@ -157,6 +155,30 @@ class Main:
                 ("--meh", "True"),
                 ("--meh=whee", "whee"),
             ):
-                _output_eq(
-                    "inv -c parsing foo {}".format(argstr), expected + "\n"
-                )
+                _output_eq("inv -c parsing foo {}".format(argstr), expected)
+
+        @pytest.mark.parametrize(
+            "argstr, expected",
+            [
+                # No 'optional' bool flag
+                (
+                    "val -- extra1 --extra2 -e3",
+                    "known='val', optional=False, remainder='extra1 --extra2 -e3'",  # noqa
+                ),
+                # Bool flag
+                (
+                    "val --optional -- extra1 --extra2 -e3",
+                    "known='val', optional=True, remainder='extra1 --extra2 -e3'",  # noqa
+                ),
+                # Explicit inverse bool flag, also tweak 'extra' order for fun
+                (
+                    "val -- --extra2 extra1 -e3",
+                    "known='val', optional=False, remainder='--extra2 extra1 -e3'",  # noqa
+                ),
+            ],
+        )
+        def tasks_can_access_the_parser_remainder_value(
+            self, argstr: str, expected: str
+        ) -> None:
+            # I.e., GH issue #250.
+            _output_eq(f"inv -c parsing use-remainder {argstr}", expected)

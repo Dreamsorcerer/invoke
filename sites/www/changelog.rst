@@ -2,6 +2,124 @@
 Changelog
 =========
 
+- :release:`3.0.3 <2026-04-07>`
+- :support:`- backported` Reverted the `@task
+  <invoke.tasks.task>` return value type hint change; it actually just makes
+  things worse. Taking this one back to the drawing table for later.
+- :release:`3.0.2 <2026-04-06>`
+- :support:`- backported` Make the return value type hint for `@task
+  <invoke.tasks.task>` more specific; as-is it would trigger typecheck errors
+  when handing regular, decorated task functions as inputs to
+  `~invoke.collection.Collection.add_task` and similar methods.
+- :bug:`742` Define a custom ``__repr__`` for `~invoke.runners.Promise` so it
+  can be displayed in interactive sessions or other debug contexts, without
+  running afoul of ``AttributeError``. Thanks to Leonid Shvechikov for the
+  original bug report.
+- :release:`3.0.1 <2026-04-06>`
+- :support:`- backported` Minor tweaks to documentation and type
+  hints/inheritance (mostly around `~invoke.runners.Promise`).
+- :release:`3.0.0 <2026-04-05>`
+- :support:`-` Dropped support for Python versions <3.9. That's right, we've
+  caught up to Python's own EOL regime...as of late 2024! As part of this
+  change, we also switched over to using ``pyproject.toml`` for packaging
+  metadata.
+- :support:`-` Expanded mypy type hint checking to more of the codebase &
+  generally touched up some type hints here and there. More of this is planned
+  to occur as we go.
+- :feature:`779` `~invoke.runners.Runner.run` now includes local subprocess
+  PIDs in `~invoke.runners.Result` objects (as ``.pid``), via the new
+  `Runner.get_pid <invoke.runners.Runner.get_pid>` method. This may be
+  generally useful for auditing or similar tasks, but is primarily intended for
+  users of ``disown=True`` who want to perform their own subprocess management.
+  Thanks to Matt J Williams for the feature request.
+- :feature:`947` Update the return value, and type hint, of `~invoke.run` and
+  friends to be `~invoke.runners.Result` instead of ``Optional[Result]``.
+  Specifically:
+
+    - The only scenario where the return value was `None` was when
+      ``disown=True``, but with hindsight (and a few years of working with
+      typed Python) it's clear we should have done what we did for
+      ``asynchronous=True`` and still returned *some* Result-y object, even if
+      it wouldn't have all the normal fields populated.
+    - We determined that the behavior of ``disowned`` is such that it can live
+      within regular `~invoke.runners.Result` without too many headaches (i.e.
+      no need for a subclass like `~invoke.runners.Promise`) and have gone that
+      route, with option to expand the class tree in a future
+      backwards-incompatible release.
+      `~invoke.runners.Runner.run`'s docstring has been updated to reflect what
+      this variant of `~invoke.runners.Result` looks like.
+    - While this change is technically **backwards incompatible**, ``disown``
+      is a very niche use case, and this type of change (going from a largely
+      unusable value to a usable one) seems worth the turbulence, especially
+      since...
+    - The main driver for this change (besides :issue:`779` elsewhere in this
+      release) was that the previous return value of ``Optional[Result]``
+      causes frustrating static analysis 'bug' (analyzers can't assume you have
+      a `~invoke.runners.Result` in hand even though it's the vastly more
+      common case).
+
+  .. warning::
+    As noted above, this change is backwards incompatible **if** you were
+    relying on this method's return value to be ``None`` when ``disown=True``.
+    It is backwards compatible in all other situations.
+
+- :feature:`250` Add access to the core CLI parser's :ref:`remainder
+  <remainder>` value, via `Context.remainder
+  <invoke.context.Context.remainder>` - this allows for more elegant
+  :ref:`wrapper tasks <wrapper-tasks>`.
+
+  .. warning::
+    This change is technically backwards incompatible, but only if you were
+    overriding the `tasks.Call.make_context <invoke.tasks.Call.make_context>`
+    method. Updating such code to work with this version of Invoke is
+    straightforward; see `this Fabric commit
+    <https://github.com/fabric/fabric/commit/7fa309db9dd5dac69079c1fb83b6f579555f7d53>`_
+    for an example.
+
+- :support:`-` Fix a grab bag's worth of Sphinx doc render problems, among
+  which were some class attributes (eg `Context.command_cwds
+  <invoke.context.Context.command_cwds>`) that had silently disappeared from
+  the class' autodoc output after our 2.0 release.
+- :release:`2.2.1 <2025-10-10>`
+- :release:`2.1.4 <2025-10-10>`
+- :bug:`1038` (fixed in :issue:`1040`) Python 3.14 tweaked the behavior of
+  `fcntl` to raise `SystemError` on buffer overflows, which our interpretation
+  of `termios.TIOCGWINSZ <termios>` technically was (we care only about the
+  first two fields in what is technically a four-field struct with half the
+  fields unused). This has been fixed by unpacking all 4 fields and then
+  discarding the unused fields during processing.
+
+  Thanks to ``@kasium`` for the original bug report and to ``@rathann`` and
+  ``@BradleyKirton`` for workshopping the patch into its final shape.
+- :bug:`1011 major`: `~invoke.runners.Runner.run`'s ``shell`` argument/config
+  option originally defaulted to ``/bin/bash``, which unsurprisingly causes a
+  hard fail on systems where this path is not present (eg, NixOS, embedded
+  systems, etc).
+
+  As of this release, we now use ``execvpe`` to leverage ``$PATH`` binary
+  search, and changed the ``run.shell`` config option's value to just
+  ``bash``. This should be backwards compatible in nearly all cases, and
+  provides a much more robust default.
+
+  Props to Lou Lecrivain for the patch, and to Jorge Araya Navarro for the
+  original report,
+- :release:`2.2.0 <2023-07-12>`
+- :feature:`-` Remove the somewhat inaccurate subclass requirement around
+  `~invoke.config.Config`'s ``.clone(into=...)`` constructor call. It was
+  broken for certain use cases (such as trying to clone one subclass into a
+  sibling subclass, which would yield a ``TypeError``) and is irrelevant if one
+  is using the new type annotations.
+- :release:`2.1.3 <2023-06-14>`
+- :bug:`944` After the release of 2.1, package-style task modules started
+  looking in the wrong place for project-level config files (inside one's eg
+  ``tasks/`` dir, instead of *next to* that dir) due to a subtlety in the new
+  import/discovery mechanism used. This has been fixed. Thanks to Arnaud V. and
+  Hunter Kelly for the reports and to Jesse P. Johnson for initial
+  debugging/diagnosis.
+- :release:`2.1.2 <2023-05-15>`
+- :support:`936 backported` Make sure ``py.typed`` is in our packaging
+  manifest; without it, users working from a regular installation
+  can't perform type checks. Thanks to Nikita Sobolev for catch & patch.
 - :release:`2.1.1 <2023-05-01>`
 - :bug:`934` The `importlib` upgrade in 2.1 had a corner case bug (regarding
   ``from . import <submodule>`` functionality within package-like task trees)
@@ -1250,8 +1368,9 @@ Changelog
 - :bug:`145` Ensure a useful message is displayed (instead of a confusing
   exception) when listing empty task collections.
 - :bug:`142` The refactored Loader class failed to account for the behavior of
-  `imp.find_module` when run against packages (vs modules) and was exploding at
-  load time. This has been fixed. Thanks to David Baumgold for catch & patch.
+  ``imp.find_module`` when run against packages (vs modules) and was exploding
+  at load time. This has been fixed. Thanks to David Baumgold for catch &
+  patch.
 - :release:`0.8.1 <2014-06-09>`
 - :bug:`140` Revert incorrect changes to our ``setup.py`` regarding detection
   of sub-packages such as the vendor tree & the parser. Also add additional

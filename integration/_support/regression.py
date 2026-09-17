@@ -9,14 +9,13 @@ ideal world this would be truly part of the integration test suite, but:
 - it can take quite a while to run, even compared to other integration tests.
 """
 
-
 import sys
 
 from invoke import task
 
 
 @task
-def check(c):
+def check(c) -> None:
     count = 0
     failures = []
     for _ in range(0, 1000):

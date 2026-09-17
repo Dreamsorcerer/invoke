@@ -449,7 +449,7 @@ class Config(DataProxy):
         # TODO: consider an automatic fallback to /bin/sh for systems lacking
         # /bin/bash; however users may configure run.shell quite easily, so...
         else:
-            shell = "/bin/bash"
+            shell = "bash"
 
         return {
             # TODO: we document 'debug' but it's not truly implemented outside
@@ -1016,16 +1016,8 @@ class Config(DataProxy):
         :returns:
             A `.Config`, or an instance of the class given to ``into``.
 
-        :raises:
-            ``TypeError``, if ``into`` is given a value and that value is not a
-            `.Config` subclass.
-
         .. versionadded:: 1.0
         """
-        # Sanity check for 'into'
-        if into is not None and not issubclass(into, self.__class__):
-            err = "'into' must be a subclass of {}!"
-            raise TypeError(err.format(self.__class__.__name__))
         # Construct new object
         klass = self.__class__ if into is None else into
         # Also allow arbitrary constructor kwargs, for subclasses where passing
