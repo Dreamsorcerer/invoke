@@ -447,15 +447,20 @@ class Runner_:
 
         def decode_stdin_off_writes_through_unchanged(self):
             payload = b"\x80\xff not text"
-            klass = self._mock_stdin_writer()
+
+            class MockedStdin(_Dummy):
+                pass
+
+            MockedStdin._write_proc_stdin = Mock()
             self._run(
                 _,
-                klass=klass,
+                klass=MockedStdin,
                 in_stream=BytesIO(payload),
                 decode_stdin=False,
             )
             written = b"".join(
-                args[0][0] for args in klass.write_proc_stdin.call_args_list
+                args[0][0]
+                for args in MockedStdin.write_proc_stdin.call_args_list
             )
             assert written == payload
 
