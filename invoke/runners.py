@@ -24,9 +24,6 @@ from typing import (
     cast,
 )
 
-# Decode text or raw bytes
-Chunk = Union[str, bytes]
-
 # Import some platform-specific things at top level so they can be mocked for
 # tests.
 try:
@@ -62,6 +59,9 @@ from .util import ExceptionHandlingThread, has_fileno, isatty
 if TYPE_CHECKING:
     from .context import Context
     from .watchers import StreamWatcher
+
+# Decode text or raw bytes
+Chunk = Union[str, bytes]
 
 
 class Runner:
