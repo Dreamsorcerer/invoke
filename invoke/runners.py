@@ -789,8 +789,8 @@ class Runner:
         if isinstance(string, bytes) and hasattr(stream, "buffer"):
             # Text streams such as sys.stdout cannot accept raw bytes; use
             # the underlying binary buffer when there is one.
-            stream.buffer.write(string)
-            stream.buffer.flush()
+            stream.buffer.write(string)  # type: ignore[attr-defined]
+            stream.buffer.flush()  # type: ignore[attr-defined]
             return
         stream.write(string)
         stream.flush()
