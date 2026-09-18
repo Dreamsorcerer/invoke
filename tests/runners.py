@@ -414,7 +414,6 @@ class Runner_:
                 fake_locale.getdefaultlocale.return_value = (None, None)
                 fake_locale.getpreferredencoding.return_value = "FALLBACK"
                 assert self._runner().default_encoding() == "FALLBACK"
- 
     class read_chunk_size:
         def defaults_to_class_attribute(self):
             runner = self._runner()
