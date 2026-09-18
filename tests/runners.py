@@ -460,7 +460,7 @@ class Runner_:
             )
             written = b"".join(
                 args[0][0]
-                for args in MockedStdin.write_proc_stdin.call_args_list
+                for args in MockedStdin._write_proc_stdin.call_args_list
             )
             assert written == payload
 
