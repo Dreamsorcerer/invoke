@@ -848,7 +848,7 @@ class Runner:
                 num_bytes = self.read_chunk_size
                 # read1 avoids blocking, but is not available on text streams.
                 read = (
-                    input_.read1 if hasattr(input_, "read1") else input_.read  # type: ignore[attr-defined]
+                    input_.read1 if hasattr(input_, "read1") else input_.read  # type: ignore[attr-defined]  # noqa: E501
                 )
             try:
                 bytes_ = read(num_bytes)
