@@ -899,7 +899,11 @@ class Runner:
                     raise
             # Decode if it appears to be binary-type. (From real terminal
             # streams, usually yes; from file-like objects, often no.)
-            if self.opts["decode_stdin"] and bytes_ and isinstance(bytes_, bytes):
+            if (
+                self.opts["decode_stdin"]
+                and bytes_
+                and isinstance(bytes_, bytes)
+            ):
                 # TODO: will decoding 1 byte at a time break multibyte
                 # character encodings? How to square interactivity with that?
                 bytes_ = self.decode(bytes_)
